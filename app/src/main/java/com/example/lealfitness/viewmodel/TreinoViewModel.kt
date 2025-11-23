@@ -111,7 +111,7 @@ class TreinoViewModel : ViewModel() {
                 } else {
                     collectionRef.document(exercicio.id).set(exercicioAtualizado).await()
                 }
-                getExercicios(treinoId) // Atualiza a tela
+                getExercicios(treinoId)
             } catch (e: Exception) {
                 Log.e("LealFitness", "Erro ao salvar no banco", e)
             }
