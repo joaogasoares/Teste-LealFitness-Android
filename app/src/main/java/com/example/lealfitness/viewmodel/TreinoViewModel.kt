@@ -87,7 +87,6 @@ class TreinoViewModel : ViewModel() {
         }
     }
 
-    // --- AQUI ESTÁ A MÁGICA ---
     fun salvarExercicio(treinoId: String, exercicio: Exercicio, imagemUri: Uri?) {
         viewModelScope.launch {
             var urlFinal = exercicio.imagemUrl
