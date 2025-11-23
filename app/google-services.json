@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "391150077528",
+    "project_id": "lealfitness-joaosoares",
+    "storage_bucket": "lealfitness-joaosoares.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:391150077528:android:bc6c309d6da48cbba8ec2d",
+        "android_client_info": {
+          "package_name": "com.example.lealfitness"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBl5cpSQ_ZjN9HvxvUpKBrSS6NCGYSNqDA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
