@@ -136,7 +136,7 @@ fun SalvarExercicioScreen(
     var nome by remember { mutableStateOf("") }
     var obs by remember { mutableStateOf("") }
     var imageUri by remember { mutableStateOf<Uri?>(null) }
-    var currentImageUrl by remember { mutableStateOf("") } // Para mostrar a foto antiga se houver
+    var currentImageUrl by remember { mutableStateOf("") }
 
     val titulo = if (exercicioId == "novo" || exercicioId.isEmpty()) "Novo Exercício" else "Editar Exercício"
 
