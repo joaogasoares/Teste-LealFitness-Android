@@ -26,6 +26,8 @@ fun DetalheTreinoScreen(navController: NavController, viewModel: TreinoViewModel
     LaunchedEffect(treinoId) { viewModel.getExercicios(treinoId) }
 
     Scaffold(
+
+        modifier = Modifier.fillMaxSize(),
         topBar = {
             TopAppBar(
                 title = { Text("Exercícios do Treino") },
@@ -33,24 +35,33 @@ fun DetalheTreinoScreen(navController: NavController, viewModel: TreinoViewModel
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Voltar")
                     }
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.primaryContainer,
+                    titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                )
             )
         },
         floatingActionButton = {
-            FloatingActionButton(onClick = { navController.navigate("salvar_exercicio/$treinoId") }) {
+            FloatingActionButton(
+                onClick = { navController.navigate("salvar_exercicio/$treinoId") },
+                containerColor = MaterialTheme.colorScheme.primary
+            ) {
                 Icon(Icons.Default.Add, contentDescription = "Adicionar Exercício")
             }
         }
     ) { padding ->
         LazyColumn(modifier = Modifier.padding(padding)) {
             items(exercicios) { exercicio ->
-                Card(modifier = Modifier.fillMaxWidth().padding(8.dp)) {
+                Card(
+                    modifier = Modifier.fillMaxWidth().padding(8.dp),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                ) {
                     Row(
                         modifier = Modifier.padding(8.dp).fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-
                         Row(modifier = Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) {
                             if (exercicio.imagemUrl.isNotEmpty()) {
                                 AsyncImage(

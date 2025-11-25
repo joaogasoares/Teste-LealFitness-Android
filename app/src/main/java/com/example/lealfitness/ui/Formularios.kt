@@ -1,12 +1,17 @@
 package com.example.lealfitness.ui
 
 import android.net.Uri
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -21,6 +26,7 @@ import com.example.lealfitness.model.Exercicio
 import com.example.lealfitness.model.Treino
 import com.example.lealfitness.viewmodel.TreinoViewModel
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SalvarTreinoScreen(
     navController: NavController,
@@ -46,66 +52,74 @@ fun SalvarTreinoScreen(
         }
     }
 
-    Column(modifier = Modifier.padding(16.dp)) {
-        Text(titulo, style = MaterialTheme.typography.headlineSmall)
-        Spacer(modifier = Modifier.height(16.dp))
-
-        OutlinedTextField(
-            value = nome,
-            onValueChange = { nome = it },
-            label = { Text("Nome (ex: Treino A)") },
-            modifier = Modifier.fillMaxWidth()
-        )
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        OutlinedTextField(
-            value = descricao,
-            onValueChange = { descricao = it },
-            label = { Text("Descrição (ex: Peito e Tríceps)") },
-            modifier = Modifier.fillMaxWidth()
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
-        Text("Dias da Semana:", style = MaterialTheme.typography.labelLarge)
-        Spacer(modifier = Modifier.height(8.dp))
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text(titulo) },
+                navigationIcon = {
+                    IconButton(onClick = { navController.popBackStack() }) {
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Voltar")
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.primaryContainer,
+                    titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                )
+            )
+        }
+    ) { paddingValues ->
+        Column(
+            modifier = Modifier
+                .padding(paddingValues)
+                .padding(16.dp)
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
         ) {
-            diasDisponiveis.forEach { dia ->
-                val selecionado = diasSelecionados.contains(dia)
-                Box(
-                    modifier = Modifier
-                        .size(40.dp)
-                        .clip(CircleShape)
-                        .background(if (selecionado) MaterialTheme.colorScheme.primary else Color.LightGray)
-                        .clickable {
-                            if (selecionado) diasSelecionados.remove(dia) else diasSelecionados.add(dia)
-                        },
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = dia.take(1),
-                        color = if (selecionado) Color.White else Color.Black
-                    )
+            OutlinedTextField(
+                value = nome,
+                onValueChange = { nome = it },
+                label = { Text("Nome (ex: Treino A)") },
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            OutlinedTextField(
+                value = descricao,
+                onValueChange = { descricao = it },
+                label = { Text("Descrição (ex: Peito e Tríceps)") },
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+            Text("Dias da Semana:", style = MaterialTheme.typography.labelLarge)
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                diasDisponiveis.forEach { dia ->
+                    val selecionado = diasSelecionados.contains(dia)
+                    Box(
+                        modifier = Modifier
+                            .size(40.dp)
+                            .clip(CircleShape)
+                            .background(if (selecionado) MaterialTheme.colorScheme.primary else Color.LightGray)
+                            .clickable {
+                                if (selecionado) diasSelecionados.remove(dia) else diasSelecionados.add(dia)
+                            },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = dia.take(1),
+                            color = if (selecionado) Color.White else Color.Black
+                        )
+                    }
                 }
             }
-        }
 
-        Spacer(modifier = Modifier.height(24.dp))
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            OutlinedButton(
-                onClick = { navController.popBackStack() },
-                modifier = Modifier.weight(1f)
-            ) {
-                Text("Cancelar")
-            }
+            Spacer(modifier = Modifier.height(24.dp))
 
             Button(
                 onClick = {
@@ -118,14 +132,15 @@ fun SalvarTreinoScreen(
                     viewModel.salvarTreino(treinoParaSalvar)
                     navController.popBackStack()
                 },
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.fillMaxWidth()
             ) {
-                Text("Salvar")
+                Text("Salvar Treino")
             }
         }
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SalvarExercicioScreen(
     navController: NavController,
@@ -157,74 +172,80 @@ fun SalvarExercicioScreen(
         }
     }
 
-    Column(modifier = Modifier.padding(16.dp)) {
-        Text(titulo, style = MaterialTheme.typography.headlineSmall)
-        Spacer(modifier = Modifier.height(16.dp))
-
-        OutlinedTextField(
-            value = nome,
-            onValueChange = { nome = it },
-            label = { Text("Nome do Exercício") },
-            modifier = Modifier.fillMaxWidth()
-        )
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        OutlinedTextField(
-            value = obs,
-            onValueChange = { obs = it },
-            label = { Text("Observações (Séries/Repetições)") },
-            modifier = Modifier.fillMaxWidth()
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        if (imageUri != null) {
-            Text("Nova imagem selecionada", color = Color.Green)
-        } else if (currentImageUrl.isNotEmpty()) {
-            AsyncImage(
-                model = currentImageUrl,
-                contentDescription = null,
-                modifier = Modifier.size(100.dp).clip(MaterialTheme.shapes.medium)
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text(titulo) },
+                navigationIcon = {
+                    IconButton(onClick = { navController.popBackStack() }) {
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Voltar")
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.primaryContainer,
+                    titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                )
             )
         }
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        Button(
-            onClick = { launcher.launch("image/*") },
-            modifier = Modifier.fillMaxWidth(),
-            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary)
+    ) { paddingValues ->
+        Column(
+            modifier = Modifier
+                .padding(paddingValues)
+                .padding(16.dp)
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
         ) {
-            Text("Selecionar Imagem / Alterar")
-        }
+            OutlinedTextField(
+                value = nome,
+                onValueChange = { nome = it },
+                label = { Text("Nome do Exercício") },
+                modifier = Modifier.fillMaxWidth()
+            )
 
-        Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            OutlinedButton(
-                onClick = { navController.popBackStack() },
-                modifier = Modifier.weight(1f)
-            ) {
-                Text("Cancelar")
+            OutlinedTextField(
+                value = obs,
+                onValueChange = { obs = it },
+                label = { Text("Observações (Séries/Repetições)") },
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            if (imageUri != null) {
+                Text("Nova imagem selecionada", color = Color.Green)
+            } else if (currentImageUrl.isNotEmpty()) {
+                AsyncImage(
+                    model = currentImageUrl,
+                    contentDescription = null,
+                    modifier = Modifier.size(100.dp).clip(MaterialTheme.shapes.medium)
+                )
             }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Button(
+                onClick = { launcher.launch("image/*") },
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary)
+            ) {
+                Text("Selecionar Imagem / Alterar")
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
 
             Button(
                 onClick = {
                     val idFinal = if (exercicioId == "novo") "" else exercicioId
-
                     val exercicio = Exercicio(id = idFinal, nome = nome, observacoes = obs, imagemUrl = currentImageUrl)
 
                     viewModel.salvarExercicio(treinoId, exercicio, imageUri, context)
-
                     navController.popBackStack()
                 },
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.fillMaxWidth()
             ) {
-                Text("Salvar")
+                Text("Salvar Exercício")
             }
         }
     }

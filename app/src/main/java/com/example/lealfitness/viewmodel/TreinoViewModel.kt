@@ -30,10 +30,8 @@ class TreinoViewModel : ViewModel() {
     private val _exercicios = MutableStateFlow<List<Exercicio>>(emptyList())
     val exercicios = _exercicios.asStateFlow()
 
-    // Variável para controlar o "ouvinte" do banco e não deixar aberto à toa
     private var exerciciosListener: ListenerRegistration? = null
 
-    // --- FUNÇÕES AUXILIARES ---
     fun getTreinoPorId(id: String): Treino? {
         return _treinos.value.find { it.id == id }
     }
@@ -42,9 +40,7 @@ class TreinoViewModel : ViewModel() {
         return _exercicios.value.find { it.id == id }
     }
 
-    // --- FUNÇÕES DE TREINO (Mantendo com GET simples para a Home) ---
     fun getTreinos() {
-        // Usando SnapshotListener na Home também para garantir atualização
         db.collection("treinos").addSnapshotListener { value, error ->
             if (error != null) {
                 Log.e("LealFitness", "Erro ao ouvir treinos", error)
@@ -91,7 +87,6 @@ class TreinoViewModel : ViewModel() {
                     Log.e("LealFitness", "Erro ao ouvir exercícios", error)
                     return@addSnapshotListener
                 }
-                // Assim que algo mudar (online ou offline), isso roda:
                 val lista = value?.documents?.map { doc ->
                     doc.toObject(Exercicio::class.java)!!.copy(id = doc.id)
                 } ?: emptyList()
@@ -105,8 +100,6 @@ class TreinoViewModel : ViewModel() {
 
             if (imagemUri != null) {
                 try {
-                    // --- MUDANÇA AQUI: TIMEOUT DE 2 SEGUNDOS ---
-                    // Se a internet estiver ruim ou desligada, ele desiste após 2000ms (2s)
                     withTimeout(2000L) {
                         val ref = storage.reference.child("images/${UUID.randomUUID()}")
                         ref.putFile(imagemUri).await()
@@ -114,19 +107,16 @@ class TreinoViewModel : ViewModel() {
                     }
                     // -------------------------------------------
                 } catch (e: Exception) {
-                    // Agora o código CAI AQUI se demorar demais ou estiver sem internet
                     Log.e("LealFitness", "Upload falhou ou demorou", e)
 
                     withContext(Dispatchers.Main) {
                         Toast.makeText(context, "Sem internet. Salvando com foto padrão.", Toast.LENGTH_LONG).show()
                     }
 
-                    // Foto de Backup (Halteres)
                     urlFinal = "https://images.unsplash.com/photo-1517836357463-d25dfeac3438?w=400&fit=crop"
                 }
             }
 
-            // Salva no Banco de Dados (Isso agora roda mesmo se a foto falhar)
             try {
                 val exercicioAtualizado = exercicio.copy(imagemUrl = urlFinal)
                 val collectionRef = db.collection("treinos").document(treinoId).collection("exercicios")
@@ -149,7 +139,6 @@ class TreinoViewModel : ViewModel() {
         }
     }
 
-    // Limpeza quando sair da tela (opcional, mas boa prática)
     override fun onCleared() {
         super.onCleared()
         exerciciosListener?.remove()
