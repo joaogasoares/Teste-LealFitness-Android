@@ -61,7 +61,6 @@ class TreinoViewModel : ViewModel() {
                 } else {
                     db.collection("treinos").document(treino.id).set(treino)
                 }
-                // Não precisa chamar getTreinos(), o Listener atualiza sozinho
             } catch (e: Exception) {
                 Log.e("LealFitness", "Erro ao salvar treino", e)
             }
