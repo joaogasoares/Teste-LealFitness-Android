@@ -13,6 +13,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
@@ -99,7 +100,6 @@ fun SalvarTreinoScreen(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-
             OutlinedButton(
                 onClick = { navController.popBackStack() },
                 modifier = Modifier.weight(1f)
@@ -137,6 +137,8 @@ fun SalvarExercicioScreen(
     var obs by remember { mutableStateOf("") }
     var imageUri by remember { mutableStateOf<Uri?>(null) }
     var currentImageUrl by remember { mutableStateOf("") }
+
+    val context = LocalContext.current
 
     val titulo = if (exercicioId == "novo" || exercicioId.isEmpty()) "Novo Exercício" else "Editar Exercício"
 
@@ -216,7 +218,8 @@ fun SalvarExercicioScreen(
 
                     val exercicio = Exercicio(id = idFinal, nome = nome, observacoes = obs, imagemUrl = currentImageUrl)
 
-                    viewModel.salvarExercicio(treinoId, exercicio, imageUri)
+                    viewModel.salvarExercicio(treinoId, exercicio, imageUri, context)
+
                     navController.popBackStack()
                 },
                 modifier = Modifier.weight(1f)

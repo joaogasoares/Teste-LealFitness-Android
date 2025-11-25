@@ -1,17 +1,23 @@
 package com.example.lealfitness.viewmodel
 
+import android.content.Context
 import android.net.Uri
 import android.util.Log
+import android.widget.Toast
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.lealfitness.model.Exercicio
 import com.example.lealfitness.model.Treino
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.ListenerRegistration
 import com.google.firebase.storage.FirebaseStorage
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeout
 import java.util.UUID
 
 class TreinoViewModel : ViewModel() {
@@ -24,6 +30,10 @@ class TreinoViewModel : ViewModel() {
     private val _exercicios = MutableStateFlow<List<Exercicio>>(emptyList())
     val exercicios = _exercicios.asStateFlow()
 
+    // Variável para controlar o "ouvinte" do banco e não deixar aberto à toa
+    private var exerciciosListener: ListenerRegistration? = null
+
+    // --- FUNÇÕES AUXILIARES ---
     fun getTreinoPorId(id: String): Treino? {
         return _treinos.value.find { it.id == id }
     }
@@ -32,17 +42,18 @@ class TreinoViewModel : ViewModel() {
         return _exercicios.value.find { it.id == id }
     }
 
+    // --- FUNÇÕES DE TREINO (Mantendo com GET simples para a Home) ---
     fun getTreinos() {
-        viewModelScope.launch {
-            try {
-                val result = db.collection("treinos").get().await()
-                val lista = result.documents.map { doc ->
-                    doc.toObject(Treino::class.java)!!.copy(id = doc.id)
-                }
-                _treinos.value = lista
-            } catch (e: Exception) {
-                Log.e("LealFitness", "Erro ao buscar treinos", e)
+        // Usando SnapshotListener na Home também para garantir atualização
+        db.collection("treinos").addSnapshotListener { value, error ->
+            if (error != null) {
+                Log.e("LealFitness", "Erro ao ouvir treinos", error)
+                return@addSnapshotListener
             }
+            val lista = value?.documents?.map { doc ->
+                doc.toObject(Treino::class.java)!!.copy(id = doc.id)
+            } ?: emptyList()
+            _treinos.value = lista
         }
     }
 
@@ -50,11 +61,11 @@ class TreinoViewModel : ViewModel() {
         viewModelScope.launch {
             try {
                 if (treino.id.isEmpty()) {
-                    db.collection("treinos").add(treino).await()
+                    db.collection("treinos").add(treino)
                 } else {
-                    db.collection("treinos").document(treino.id).set(treino).await()
+                    db.collection("treinos").document(treino.id).set(treino)
                 }
-                getTreinos()
+                // Não precisa chamar getTreinos(), o Listener atualiza sozinho
             } catch (e: Exception) {
                 Log.e("LealFitness", "Erro ao salvar treino", e)
             }
@@ -63,70 +74,84 @@ class TreinoViewModel : ViewModel() {
 
     fun deletarTreino(treinoId: String) {
         viewModelScope.launch {
-            try {
-                db.collection("treinos").document(treinoId).delete().await()
-                getTreinos()
-            } catch (e: Exception) {
-                Log.e("LealFitness", "Erro ao deletar", e)
-            }
+            db.collection("treinos").document(treinoId).delete()
         }
     }
 
+    // --- FUNÇÕES DE EXERCÍCIO (COM LISTENER EM TEMPO REAL) ---
     fun getExercicios(treinoId: String) {
-        viewModelScope.launch {
-            try {
-                val result = db.collection("treinos").document(treinoId)
-                    .collection("exercicios").get().await()
-                val lista = result.documents.map { doc ->
-                    doc.toObject(Exercicio::class.java)!!.copy(id = doc.id)
+        // Remove o ouvinte anterior se existir (para não duplicar)
+        exerciciosListener?.remove()
+
+        // Cria um novo "espião" no banco de dados
+        exerciciosListener = db.collection("treinos").document(treinoId)
+            .collection("exercicios")
+            .addSnapshotListener { value, error ->
+                if (error != null) {
+                    Log.e("LealFitness", "Erro ao ouvir exercícios", error)
+                    return@addSnapshotListener
                 }
+                // Assim que algo mudar (online ou offline), isso roda:
+                val lista = value?.documents?.map { doc ->
+                    doc.toObject(Exercicio::class.java)!!.copy(id = doc.id)
+                } ?: emptyList()
                 _exercicios.value = lista
-            } catch (e: Exception) {
-                Log.e("LealFitness", "Erro ao buscar exercícios", e)
             }
-        }
     }
 
-    fun salvarExercicio(treinoId: String, exercicio: Exercicio, imagemUri: Uri?) {
+    fun salvarExercicio(treinoId: String, exercicio: Exercicio, imagemUri: Uri?, context: Context) {
         viewModelScope.launch {
             var urlFinal = exercicio.imagemUrl
 
             if (imagemUri != null) {
                 try {
-                    val ref = storage.reference.child("images/${UUID.randomUUID()}")
-                    ref.putFile(imagemUri).await()
-                    urlFinal = ref.downloadUrl.await().toString()
+                    // --- MUDANÇA AQUI: TIMEOUT DE 2 SEGUNDOS ---
+                    // Se a internet estiver ruim ou desligada, ele desiste após 2000ms (2s)
+                    withTimeout(2000L) {
+                        val ref = storage.reference.child("images/${UUID.randomUUID()}")
+                        ref.putFile(imagemUri).await()
+                        urlFinal = ref.downloadUrl.await().toString()
+                    }
+                    // -------------------------------------------
                 } catch (e: Exception) {
-                    Log.e("LealFitness", "Upload falhou, usando imagem de teste", e)
-                    urlFinal = "https://img.freepik.com/free-vector/illustration-gallery-icon_53876-27002.jpg"
+                    // Agora o código CAI AQUI se demorar demais ou estiver sem internet
+                    Log.e("LealFitness", "Upload falhou ou demorou", e)
+
+                    withContext(Dispatchers.Main) {
+                        Toast.makeText(context, "Sem internet. Salvando com foto padrão.", Toast.LENGTH_LONG).show()
+                    }
+
+                    // Foto de Backup (Halteres)
+                    urlFinal = "https://images.unsplash.com/photo-1517836357463-d25dfeac3438?w=400&fit=crop"
                 }
             }
 
+            // Salva no Banco de Dados (Isso agora roda mesmo se a foto falhar)
             try {
                 val exercicioAtualizado = exercicio.copy(imagemUrl = urlFinal)
                 val collectionRef = db.collection("treinos").document(treinoId).collection("exercicios")
 
                 if (exercicio.id.isEmpty()) {
-                    collectionRef.add(exercicioAtualizado).await()
+                    collectionRef.add(exercicioAtualizado)
                 } else {
-                    collectionRef.document(exercicio.id).set(exercicioAtualizado).await()
+                    collectionRef.document(exercicio.id).set(exercicioAtualizado)
                 }
-                getExercicios(treinoId)
             } catch (e: Exception) {
-                Log.e("LealFitness", "Erro ao salvar no banco", e)
+                Log.e("LealFitness", "Erro no banco", e)
             }
         }
     }
 
     fun deletarExercicio(treinoId: String, exercicioId: String) {
         viewModelScope.launch {
-            try {
-                db.collection("treinos").document(treinoId)
-                    .collection("exercicios").document(exercicioId).delete().await()
-                getExercicios(treinoId)
-            } catch (e: Exception) {
-                Log.e("LealFitness", "Erro ao deletar exercício", e)
-            }
+            db.collection("treinos").document(treinoId)
+                .collection("exercicios").document(exercicioId).delete()
         }
+    }
+
+    // Limpeza quando sair da tela (opcional, mas boa prática)
+    override fun onCleared() {
+        super.onCleared()
+        exerciciosListener?.remove()
     }
 }
