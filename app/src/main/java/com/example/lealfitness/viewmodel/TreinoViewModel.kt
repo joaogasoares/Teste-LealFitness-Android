@@ -74,12 +74,9 @@ class TreinoViewModel : ViewModel() {
         }
     }
 
-    // --- FUNÇÕES DE EXERCÍCIO (COM LISTENER EM TEMPO REAL) ---
     fun getExercicios(treinoId: String) {
-        // Remove o ouvinte anterior se existir (para não duplicar)
         exerciciosListener?.remove()
 
-        // Cria um novo "espião" no banco de dados
         exerciciosListener = db.collection("treinos").document(treinoId)
             .collection("exercicios")
             .addSnapshotListener { value, error ->
