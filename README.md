@@ -50,7 +50,7 @@ Para executar este projeto, você precisará de:
 
 4.  **Executar:**
     * Selecione um Emulador ou Dispositivo Físico.
-    * Clique no botão **Run (▶)**.
+    * Clique no botão **Run** ou **Shift+f10**.
 
 ## Observação
 
