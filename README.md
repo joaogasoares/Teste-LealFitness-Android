@@ -1,7 +1,5 @@
 # Leal Treinos (LealFitness) 
 
-Solução desenvolvida para o desafio técnico Android da **Leal Apps**.
-
 O aplicativo é um gerenciador de fichas de treino que permite ao usuário criar rotinas, definir dias da semana e adicionar exercícios com fotos, persistindo todos os dados na nuvem.
 
 ## Funcionalidades
@@ -51,10 +49,6 @@ Para executar este projeto, você precisará de:
 4.  **Executar:**
     * Selecione um Emulador ou Dispositivo Físico.
     * Clique no botão **Run** ou **Shift+f10**.
-
-## Observação
-
-* **Tipagem:** O campo "Nome" do exercício foi implementado como `String` (texto) ao invés de `number`, conforme inferido pela natureza do dado.
 
 
 ---
